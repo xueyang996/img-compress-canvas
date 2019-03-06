@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>图片压缩示例</title>
+</head>
+
+
+<body>
+  <input type="file" id="file" accept="image/*">
+
+  <p id="log">
+
+  </p>
+  <script>
+    // https://developer.mozilla.org/zh-CN/docs/Web/API/Canvas_API
+    // 具体canvas 请参考mdn文档
+    const imgFile = document.querySelector('#file');
+    const log = document.querySelector('#log');
+    // 压缩图片需要的一些元素和对象
+    let reader = new FileReader(),
+        img = new Image();
+
+    // 选择文件对象
+    let file = null;
+
+    // 缩放图片的canvas
+    let canvas = document.createElement('canvas')
+    let context = canvas.getContext('2d');
+
+    img.onload = function(){
+      let originWidth = this.width;
+      let originHeight = this.height;
+      // 最大尺寸限制（要压缩到的尺寸）
+      const maxWidth = 400, maxHeight = 400
+      // 目标尺寸
+      let targetWidth = originWidth, targetHeight = originHeight;
+      // 图片超出限制
+      if (originWidth > maxWidth || originHeight > maxHeight) {
+        if (originWidth / originHeight > maxWidth / maxHeight) {
+          // 更宽，按照宽度限定尺寸
+          targetWidth = maxWidth
+          targetHeight = Math.round( maxWidth * ( originHeight / originWidth ) )
+        } else {
+          targetHeight = maxHeight
+          targetWidth = Math.round( maxHeight * ( originWidth / originHeight ) )
+        }
+
+        canvas.width = targetWidth
+        canvas.height = targetHeight
+        context.clearRect(0,0,targetWidth, targetHeight)
+        context.drawImage(img, 0, 0 , targetWidth, targetHeight)
+
+        // canvas 转 data
+        // 具体请参考文档
+        // https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLCanvasElement/toDataURL
+        const result = canvas.toDataURL('image/jpeg', 0.9)
+        const result11 = canvas.toDataURL('image/jpeg', 0.1)
+        // 计算新的图片大小
+        let eqTagIndex=result.indexOf("=");
+        let baseStr=eqTagIndex!=-1? result.substring(0,eqTagIndex):result;
+        var strLen=baseStr.length;
+        var fileSize=strLen-(strLen/8)*2
+        console.log(result.length , result11.length)
+        logInfo(`<h3>压缩后图片大小${parseInt(fileSize/1024, 10)}KB</h3>`)
+        logInfo(`<img src=${result} />`)
+        // canvas 转blob 并上传
+        canvas.toBlob(function(blob) {
+          // ajax
+        }, file.type || 'image/png')
+
+      } else {
+        console.log('不需要压缩')
+      }
+    }
+
+    // 文件base64化，获取原始尺寸
+    reader.onload = function(e) {
+      logInfo(`<img src=${e.target.result}>`)
+      img.src = e.target.result
+    }
+    imgFile.addEventListener('change', function(event) {
+      file = event.target.files[0]
+      console.log(file)
+      logInfo(`<h3>图片原始大小${parseInt(file.size/1024, 10)}KB</h3>`)
+      if ( file.type.indexOf('image') === 0 ) {
+        reader.readAsDataURL(file)
+      }
+    })
+
+    function logInfo(info){
+      log.innerHTML += (info + "<br/>");
+    }
+  </script>
+</body>
+</html>
